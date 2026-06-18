@@ -38,4 +38,9 @@ public class FileJobRepository {
         return Optional.ofNullable(fileJob);
     }
 
+    public void update(FileJob fileJob) {
+
+        getTable().putItem(fileJob);
+    }
+
 }

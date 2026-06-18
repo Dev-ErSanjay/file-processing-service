@@ -35,6 +35,9 @@ public class FileJobService {
 
         fileJobRepository.save(fileJob);
 
+        new Thread(() -> {
+            processFile(jobId);
+        }).start();
         return "FileJob saved to DynamoDB with Job ID: " + jobId;
 
     }
@@ -43,6 +46,30 @@ public class FileJobService {
 
         return fileJobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job Not Found"));
+    }
+
+    public void processFile(String jobId) {
+
+        try {
+            FileJob fileJob = fileJobRepository.findById(jobId).orElseThrow();
+            fileJob.setStatus("PROCESSING");
+            fileJobRepository.update(fileJob);
+
+            System.out.println("Processing started for job: " + jobId);
+
+            Thread.sleep(10000);
+            fileJob.setStatus("COMPLETED");
+            fileJob.setProcessedTime(LocalDateTime.now());
+            fileJobRepository.update(fileJob);
+
+            System.out.println("Processing completed for Job: " + jobId);
+        } catch (Exception e) {
+
+            FileJob fileJob = fileJobRepository.findById(jobId).orElseThrow();
+            fileJob.setStatus("FAILED");
+            fileJobRepository.update(fileJob);
+            e.printStackTrace();
+        }
     }
 
 }
