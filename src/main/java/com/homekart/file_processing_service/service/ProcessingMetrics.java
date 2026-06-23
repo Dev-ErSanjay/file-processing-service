@@ -1,25 +1,24 @@
 package com.homekart.file_processing_service.service;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.springframework.stereotype.Component;
 
 @Component
 public class ProcessingMetrics {
 
-    private int processedFiles = 0;
+    private AtomicInteger processedFiles = new AtomicInteger(0);
 
     public void increment() {
 
-        try {
-            Thread.sleep(1);
-        } catch (Exception e) {
+        int count = processedFiles.incrementAndGet();
 
-        }
-        processedFiles++;
-        System.out.println("processed files count: " + processedFiles);
+        System.out.println("processed files count: " + count);
     }
 
     public int getProcessedFiles() {
-        return processedFiles;
+
+        return processedFiles.get();
     }
 
 }
