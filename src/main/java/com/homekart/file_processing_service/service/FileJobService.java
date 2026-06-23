@@ -3,6 +3,7 @@ package com.homekart.file_processing_service.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +19,7 @@ public class FileJobService {
 
     private final S3Service s3Service;
     private final FileJobRepository fileJobRepository;
+    private final ExecutorService executorService;
 
     public String uploadFile(MultipartFile file) throws IOException {
 
@@ -35,9 +37,10 @@ public class FileJobService {
 
         fileJobRepository.save(fileJob);
 
-        new Thread(() -> {
+        executorService.submit(() -> {
             processFile(jobId);
-        }).start();
+        });
+
         return "FileJob saved to DynamoDB with Job ID: " + jobId;
 
     }
@@ -50,6 +53,8 @@ public class FileJobService {
 
     public void processFile(String jobId) {
 
+        System.out.println("Current thread: " + Thread.currentThread().getName());
+
         try {
             FileJob fileJob = fileJobRepository.findById(jobId).orElseThrow();
             fileJob.setStatus("PROCESSING");
@@ -57,7 +62,7 @@ public class FileJobService {
 
             System.out.println("Processing started for job: " + jobId);
 
-            Thread.sleep(10000);
+            Thread.sleep(30000);
             fileJob.setStatus("COMPLETED");
             fileJob.setProcessedTime(LocalDateTime.now());
             fileJobRepository.update(fileJob);
