@@ -3,7 +3,6 @@ package com.homekart.file_processing_service.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,7 +18,7 @@ public class FileJobService {
 
     private final S3Service s3Service;
     private final FileJobRepository fileJobRepository;
-    private final ExecutorService executorService;
+    private final FileProcessingQueue queue;
 
     public String uploadFile(MultipartFile file) throws IOException {
 
@@ -37,9 +36,12 @@ public class FileJobService {
 
         fileJobRepository.save(fileJob);
 
-        executorService.submit(() -> {
-            processFile(jobId);
-        });
+        try {
+            queue.addJob(jobId);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to add job to queue", e);
+        }
 
         return "FileJob saved to DynamoDB with Job ID: " + jobId;
 
