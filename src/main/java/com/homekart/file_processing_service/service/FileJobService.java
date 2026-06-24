@@ -3,7 +3,7 @@ package com.homekart.file_processing_service.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+// import java.util.concurrent.CompletableFuture;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,11 +20,12 @@ public class FileJobService {
     private final S3Service s3Service;
     private final FileJobRepository fileJobRepository;
     private final FileProcessingQueue queue;
-    private final ProcessingService processingService;
+    // private final ProcessingService processingService;
     private final ProcessingMetrics processingMetrics;
     private final ReportService reportService;
-    private final ChunkProcessingService chunkProcessingService;
+    // private final ChunkProcessingService chunkProcessingService;
     private final CyclicBarrierService cyclicBarrierService;
+    private final SemaphoreService semaphoreService;
 
     public String uploadFile(MultipartFile file) throws IOException {
 
@@ -80,32 +81,34 @@ public class FileJobService {
             // Metadata + Virus Scan + Thumbnail
             // ==================================================
 
-            CompletableFuture<String> metadataTask = CompletableFuture.supplyAsync(
-                    () -> processingService.extractMetadata(jobId));
+            // CompletableFuture<String> metadataTask = CompletableFuture.supplyAsync(
+            // () -> processingService.extractMetadata(jobId));
 
-            CompletableFuture<String> virusTask = CompletableFuture.supplyAsync(
-                    () -> processingService.scanFile(jobId));
+            // CompletableFuture<String> virusTask = CompletableFuture.supplyAsync(
+            // () -> processingService.scanFile(jobId));
 
-            CompletableFuture<String> thumbnailTask = CompletableFuture.supplyAsync(
-                    () -> processingService.generateThumbnail(jobId));
+            // CompletableFuture<String> thumbnailTask = CompletableFuture.supplyAsync(
+            // () -> processingService.generateThumbnail(jobId));
 
-            CompletableFuture.allOf(
-                    metadataTask,
-                    virusTask,
-                    thumbnailTask)
-                    .join();
+            // CompletableFuture.allOf(
+            // metadataTask,
+            // virusTask,
+            // thumbnailTask)
+            // .join();
 
             // ==================================================
             // Phase 9 - synchronized
             // ==================================================
 
-            // reportService.generateReport(jobId);
+            reportService.generateReport(jobId);
+
+            semaphoreService.access3(jobId);
 
             // ==================================================
             // Phase 10 - ReentrantLock + tryLock
             // ==================================================
 
-            reportService.generateReport(jobId);
+            // reportService.generateReport(jobId);
 
             // ==================================================
             // Phase 12 - CountDownLatch
