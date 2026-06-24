@@ -22,10 +22,11 @@ public class FileJobService {
     private final FileProcessingQueue queue;
     // private final ProcessingService processingService;
     private final ProcessingMetrics processingMetrics;
-    private final ReportService reportService;
+    // private final ReportService reportService;
     // private final ChunkProcessingService chunkProcessingService;
-    private final CyclicBarrierService cyclicBarrierService;
-    private final SemaphoreService semaphoreService;
+    // private final CyclicBarrierService cyclicBarrierService;
+    // private final SemaphoreService semaphoreService;
+    private final AsyncProcessingService asyncProcessingService;
 
     public String uploadFile(MultipartFile file) throws IOException {
 
@@ -100,9 +101,9 @@ public class FileJobService {
             // Phase 9 - synchronized
             // ==================================================
 
-            reportService.generateReport(jobId);
+            // reportService.generateReport(jobId);
 
-            semaphoreService.access3(jobId);
+            // semaphoreService.access3(jobId);
 
             // ==================================================
             // Phase 10 - ReentrantLock + tryLock
@@ -117,7 +118,7 @@ public class FileJobService {
 
             // chunkProcessingService.processChunks(jobId);
 
-            cyclicBarrierService.processChunksWithBarrier(jobId);
+            // cyclicBarrierService.processChunksWithBarrier(jobId);
 
             fileJob.setStatus("COMPLETED");
             fileJob.setProcessedTime(LocalDateTime.now());
@@ -128,6 +129,7 @@ public class FileJobService {
             // Phase 8 - AtomicInteger
             // ==================================================
 
+            asyncProcessingService.sendNotification(jobId);
             processingMetrics.increment();
 
         } catch (Exception e) {
