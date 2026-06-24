@@ -22,6 +22,7 @@ public class FileJobService {
     private final FileProcessingQueue queue;
     private final ProcessingService processingService;
     private final ProcessingMetrics processingMetrics;
+    private final ReportService reportService;
 
     public String uploadFile(MultipartFile file) throws IOException {
 
@@ -81,16 +82,18 @@ public class FileJobService {
                     virusTask,
                     thumbnailTask).join();
 
-            System.out.println(metadataTask.join());
-            System.out.println(virusTask.join());
-            System.out.println(thumbnailTask.join());
+            reportService.generateReport(jobId);
+
+            // System.out.println(metadataTask.join());
+            // System.out.println(virusTask.join());
+            // System.out.println(thumbnailTask.join());
 
             fileJob.setStatus("COMPLETED");
             fileJob.setProcessedTime(LocalDateTime.now());
             fileJobRepository.update(fileJob);
             processingMetrics.increment();
 
-            System.out.println("Processing completed for Job: " + jobId);
+            // System.out.println("Processing completed for Job: " + jobId);
         } catch (Exception e) {
 
             FileJob fileJob = fileJobRepository.findById(jobId).orElseThrow();
