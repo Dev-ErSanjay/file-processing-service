@@ -23,6 +23,7 @@ public class FileJobService {
     private final ProcessingService processingService;
     private final ProcessingMetrics processingMetrics;
     private final ReportService reportService;
+    private final ChunkProcessingService chunkProcessingService;
 
     public String uploadFile(MultipartFile file) throws IOException {
 
@@ -59,14 +60,24 @@ public class FileJobService {
 
     public void processFile(String jobId) {
 
-        System.out.println("Current thread: " + Thread.currentThread().getName());
-
         try {
-            FileJob fileJob = fileJobRepository.findById(jobId).orElseThrow();
+
+            FileJob fileJob = fileJobRepository.findById(jobId)
+                    .orElseThrow();
+
             fileJob.setStatus("PROCESSING");
             fileJobRepository.update(fileJob);
 
-            System.out.println("Processing started for job: " + jobId);
+            // ==================================================
+            // Phase 4 - Manual Thread
+            // ==================================================
+
+            // Thread.sleep(30000);
+
+            // ==================================================
+            // Phase 7 - CompletableFuture
+            // Metadata + Virus Scan + Thumbnail
+            // ==================================================
 
             CompletableFuture<String> metadataTask = CompletableFuture.supplyAsync(
                     () -> processingService.extractMetadata(jobId));
@@ -80,25 +91,47 @@ public class FileJobService {
             CompletableFuture.allOf(
                     metadataTask,
                     virusTask,
-                    thumbnailTask).join();
+                    thumbnailTask)
+                    .join();
+
+            // ==================================================
+            // Phase 9 - synchronized
+            // ==================================================
+
+            // reportService.generateReport(jobId);
+
+            // ==================================================
+            // Phase 10 - ReentrantLock + tryLock
+            // ==================================================
 
             reportService.generateReport(jobId);
 
-            // System.out.println(metadataTask.join());
-            // System.out.println(virusTask.join());
-            // System.out.println(thumbnailTask.join());
+            // ==================================================
+            // Phase 12 - CountDownLatch
+            // Large File Chunk Processing
+            // ==================================================
+
+            chunkProcessingService.processChunks(jobId);
 
             fileJob.setStatus("COMPLETED");
             fileJob.setProcessedTime(LocalDateTime.now());
+
             fileJobRepository.update(fileJob);
+
+            // ==================================================
+            // Phase 8 - AtomicInteger
+            // ==================================================
+
             processingMetrics.increment();
 
-            // System.out.println("Processing completed for Job: " + jobId);
         } catch (Exception e) {
 
-            FileJob fileJob = fileJobRepository.findById(jobId).orElseThrow();
+            FileJob fileJob = fileJobRepository.findById(jobId)
+                    .orElseThrow();
+
             fileJob.setStatus("FAILED");
             fileJobRepository.update(fileJob);
+
             e.printStackTrace();
         }
     }
